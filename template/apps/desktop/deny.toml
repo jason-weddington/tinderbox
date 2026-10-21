@@ -16,22 +16,55 @@ ignore = [
 ]
 
 [licenses]
-# The root policy (permissive only) plus what Tauri's own tree needs. All are
-# OSI-approved; MPL-2.0 is file-level copyleft that applies to changes to
-# those crates' own files, which an app links unmodified.
+# Licenses a dependency may use.
 allow = [
-    "MIT",
+    "0BSD",
+    "AFL-2.1",
+    "AFL-3.0",
+    "Apache-1.1",
     "Apache-2.0",
-    "Unicode-3.0",
-    # alloc-no-stdlib, alloc-stdlib, brotli (Tauri's asset compression)
-    "BSD-3-Clause",
-    # foldhash
-    "Zlib",
-    # target-lexicon (via the build tooling)
     "Apache-2.0 WITH LLVM-exception",
-    # cssparser, cssparser-macros, dtoa-short, selectors (wry's HTML handling), option-ext
+    "BSD-2-Clause",
+    "BSD-2-Clause-Patent",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CC-BY-2.0",
+    "CC-BY-2.5",
+    "CC-BY-3.0",
+    "CC-BY-4.0",
+    "CC0-1.0",
+    "FTL",
+    "ICU",
+    "IJG",
+    "ISC",
+    "ImageMagick",
+    "Libpng",
+    "MIT",
+    "MIT-CMU",
     "MPL-2.0",
+    "MulanPSL-2.0",
+    "OFL-1.0",
+    "OFL-1.1",
+    "OLDAP-2.8",
+    "OpenSSL",
+    "PDDL-1.0",
+    "PHP-3.0",
+    "PHP-3.01",
+    "PSF-2.0",
+    "PostgreSQL",
+    "Python-2.0",
+    "Python-2.0.1",
+    "Ruby",
+    "Unicode-3.0",
+    "Unlicense",
+    "WTFPL",
+    "X11",
+    "Zlib",
+    "blessing",
+    "curl",
+    "libpng-2.0",
 ]
+unused-allowed-license = "allow"
 confidence-threshold = 0.8
 
 [licenses.private]
