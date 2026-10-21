@@ -47,8 +47,18 @@ arch=scripts/check-architecture.sh
 core=crates/emberly-core
 app=apps/desktop/src-tauri
 
+# A local stand-in named tokio: planting the real crate would need it in the
+# registry cache, which a fresh machine or CI runner does not have.
+plant_fake_tokio() {
+  mkdir -p fake-tokio/src &&
+    printf '[package]\nname = "tokio"\nversion = "1.0.0"\nedition = "2024"\npublish = false\n' > fake-tokio/Cargo.toml &&
+    : > fake-tokio/src/lib.rs &&
+    perl -pi -e 's/^thiserror = .*$/$&\ntokio = { path = "..\/..\/fake-tokio" }/' "$1/Cargo.toml" &&
+    cargo update --offline -q
+}
+export -f plant_fake_tokio
 expect_fail "the core depends on tokio" "$arch" \
-  "perl -pi -e 's/^thiserror = .*$/\$&\ntokio = \"1\"/' $core/Cargo.toml && cargo update --offline -q" \
+  "plant_fake_tokio $core" \
   'emberly-core depends on tokio'
 expect_fail "the core reads a file directly" "$arch" \
   "printf 'fn f() { let _ = std::fs::read(\"x\"); }\n' >> $core/src/scan.rs" \
