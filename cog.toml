@@ -2,6 +2,7 @@
 # commits; `cog bump --auto` derives the SemVer bump from history.
 from_latest_tag = false
 ignore_merge_commits = true
+tag_prefix = "v"
 
 # The version lives in pyproject.toml and src/tinderbox/__init__.py, and the
 # install command in README.md and docs/design.md names the tag; the bump sets
