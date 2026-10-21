@@ -3,14 +3,16 @@
 from_latest_tag = false
 ignore_merge_commits = true
 
-# The version lives in pyproject.toml and src/tinderbox/__init__.py; the bump
-# sets both, refreshes uv.lock, and stages the lot so it lands in the
+# The version lives in pyproject.toml and src/tinderbox/__init__.py, and the
+# install command in README.md and docs/design.md names the tag; the bump sets
+# all of them, refreshes uv.lock, and stages the lot so it lands in the
 # `chore(version)` commit.
 pre_bump_hooks = [
   "perl -0pi -e 's/^version = \"[^\"]+\"/version = \"{{version}}\"/m' pyproject.toml",
   "perl -0pi -e 's/^__version__ = \"[^\"]+\"/__version__ = \"{{version}}\"/m' src/tinderbox/__init__.py",
+  'perl -pi -e "s/tinderbox\x40v[0-9][0-9.]*/tinderbox\x40v{{version}}/g" README.md docs/design.md',
   "uv lock",
-  "git add pyproject.toml src/tinderbox/__init__.py uv.lock",
+  "git add pyproject.toml src/tinderbox/__init__.py uv.lock README.md docs/design.md",
 ]
 
 [changelog]
