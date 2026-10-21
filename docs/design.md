@@ -45,6 +45,7 @@ Rules for template authors, enforced by a generator test that scaffolds a hyphen
 - A Rust identifier always uses the snake prefix form (`emberly_core`, `emberly_app_lib`), never a bare `emberly`.
 - `Emberly` appears only in user-visible text.
 - The sentinel never appears inside another word, and no other word in the template contains it.
+- Anything sorted by name keeps the sentinel in a group of its own, so the order holds whatever the app is called: the core dependency in `src-tauri/Cargo.toml` sits in its own blank-line group (the gate runs `cargo sort --grouped`), and Rust `use` lines for the core crate form their own import group (rustfmt sorts within a group only).
 
 The project name must match `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`. The title may not contain quotes, backslashes, `<`, `>`, `&` or control characters (it lands in JSON, TOML, HTML and Rust strings); the identifier must be dotted reverse-DNS (`[A-Za-z0-9-]` segments). The replacement is a single pass, so replacement text is never rescanned for the sentinel.
 
@@ -87,7 +88,7 @@ The template ships one small feature that exercises every seam, so an agent can 
 
 | Step | pre-commit | pre-push | full |
 |---|---|---|---|
-| `cargo fmt --check` (both workspaces), `cargo sort --check`, `typos`, `gitleaks` | yes | yes | yes |
+| `cargo fmt --check` and `cargo sort --grouped --check` (both workspaces), `typos`, `gitleaks` | yes | yes | yes |
 | check-architecture, selftest-checks | yes | yes | yes |
 | `cargo clippy --all-targets --all-features --locked -D warnings` (both workspaces) | yes | yes | yes |
 | core tests: `cargo llvm-cov nextest --no-report` (one shared instrumented build) | yes | yes | yes |
@@ -100,11 +101,11 @@ The template ships one small feature that exercises every seam, so an agent can 
 | `cargo machete`, `cargo deny check` (both workspaces), `pnpm audit --prod` | | yes | yes |
 | Playwright e2e with axe accessibility checks, frontend coverage floor, `vite build` | | yes | yes |
 
-Coverage floors only ratchet up. `.config/nextest.toml` sets a hard timeout (`slow-timeout = { period = "30s", terminate-after = 4 }`).
+Coverage floors only ratchet up; they are literals at the top of `gate.sh`. The frontend floor is whole-number line coverage of `src/` (unit and e2e merged, the mock excluded). `.config/nextest.toml` sets a hard timeout (`slow-timeout = { period = "30s", terminate-after = 4 }`); `.cargo/mutants.toml` names the files mutation testing examines (the whole core). `selftest-checks.sh` also proves the eslint Tauri-import ban and the docs-only skip.
 
 ### Lints
 
-The core uses the strictest table we run: `unsafe_code = "forbid"`; `missing_docs`, `unreachable_pub`, `unused_results` deny; clippy `all` and `pedantic` deny, plus `allow_attributes`, `allow_attributes_without_reason`, `unwrap_used`, `expect_used`, `panic`, `todo`, `unimplemented`, `unreachable`, `indexing_slicing`, `string_slice`, `arithmetic_side_effects`, `as_conversions`, `wildcard_enum_match_arm`, `dbg_macro`, `print_stdout`, `print_stderr`, `let_underscore_must_use`, `shadow_unrelated`, `missing_assert_message` and `tests_outside_test_module` deny. `clippy.toml` allows unwrap, expect, panic and indexing in tests and uses `disallowed-methods` to ban `std::process::exit` and `std::env::set_var` / `remove_var`. `src-tauri` is outside the root workspace, so it carries its own copy of the table; any lint that Tauri's generated code trips is relaxed there with a `reason`.
+The core uses the strictest table we run: `unsafe_code = "forbid"`; `missing_docs`, `unreachable_pub`, `unused_results` deny; clippy `all` and `pedantic` deny, plus `allow_attributes`, `allow_attributes_without_reason`, `unwrap_used`, `expect_used`, `panic`, `todo`, `unimplemented`, `unreachable`, `indexing_slicing`, `string_slice`, `arithmetic_side_effects`, `as_conversions`, `wildcard_enum_match_arm`, `dbg_macro`, `print_stdout`, `print_stderr`, `let_underscore_must_use`, `shadow_unrelated`, `missing_assert_message` and `tests_outside_test_module` deny. The table in `Cargo.toml` is the source of truth and adds the rest of the strict set (`get_unwrap`, the `cast_*` family, `match_wildcard_for_single_variants`, `let_underscore_untyped`, `exit`, `unused_must_use`), with `overflow-checks` on in every profile. `clippy.toml` allows unwrap, expect, panic and indexing in tests and uses `disallowed-methods` to ban `std::process::exit` and `std::env::set_var` / `remove_var`. `src-tauri` is outside the root workspace, so it carries its own copy of the table; any lint that Tauri's generated code trips is relaxed there with a `reason`.
 
 ## Versions
 
@@ -118,12 +119,13 @@ A new kit starts on the latest of everything; move to an older version only for 
 | `tauri-plugin-dialog` / `@tauri-apps/plugin-dialog` | 2.8.3 / 2.8.3 | exact |
 | `tauri-plugin-single-instance` | 2.5.4 | exact |
 | svelte / @sveltejs/vite-plugin-svelte / vite | 5.57.2 / 7.3.1 / 8.3.5 | exact |
-| typescript / svelte-check | 7.0.2 / 4.7.7 | exact |
-| eslint / typescript-eslint / eslint-plugin-svelte | 10.13.0 / 8.72.0 / 3.23.1 | exact |
+| typescript / svelte-check | 6.0.3 and 7.0.2 / 4.7.7 | exact. TypeScript 7's npm package ships no compiler API (its main export is the version string), so typescript-eslint 8.72 (peer `typescript <6.1`) cannot load it. 6.0.3 is `typescript` for eslint; 7.0.2 is installed as `@typescript/native` and svelte-check type-checks with it (`--tsgo`) |
+| eslint / typescript-eslint / eslint-plugin-svelte / globals | 10.13.0 / 8.72.0 / 3.23.1 / 17.13.0 | exact |
 | @playwright/test / @axe-core/playwright | 1.64.1 / 4.14.0 | exact |
 | monocart-coverage-reports | 3.0.0 | exact |
 | pnpm (`packageManager`) | 12.14.0 | exact |
-| serde / serde_json / thiserror / tempfile / insta | latest at build time | caret + `Cargo.lock` |
+| @types/node | 26.6.5 | exact |
+| serde / serde_json / thiserror | latest at build time | caret + `Cargo.lock` (the example needs no tempfile or insta: its tests use fakes, and its JSON shapes are pinned by a shared fixture) |
 
 Lockfiles (`Cargo.lock` in both workspaces, `pnpm-lock.yaml`) ship with the template, so a scaffold resolves exactly what CI tested.
 

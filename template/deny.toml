@@ -1,0 +1,33 @@
+# cargo-deny policy for the ROOT workspace (crates/*). The desktop app
+# (apps/desktop) is its own cargo workspace with its own deny.toml.
+# Docs: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+all-features = true
+
+[advisories]
+ignore = []
+
+[licenses]
+# Permissive only. A dependency under any other license is a deliberate,
+# reviewed decision: add it here with a reason rather than widening the list.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    # unicode-ident (via serde): "(MIT OR Apache-2.0) AND Unicode-3.0".
+    "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
