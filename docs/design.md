@@ -12,9 +12,12 @@ This file is the spec. Change it in the same commit when reality disagrees.
 
 ```
 pyproject.toml            the generator package (hatchling, zero runtime dependencies)
+hatch_build.py            build hook: ships template/ as tinderbox/template/, minus build output
 src/tinderbox/            the CLI: copy the template, rename the sentinel, run setup
-tests/                    generator tests (pytest)
+tests/                    generator tests (pytest); tests/fixtures/template exercises every sentinel form
 template/                 the template: a complete, working app named "Emberly"
+scripts/test-template.sh  scaffold the real template and run its full gate
+lefthook.yml, cog.toml, release.sh, _typos.toml, .github/workflows/ci.yml   tinderbox's own tooling
 docs/design.md            this file
 ```
 
@@ -43,7 +46,7 @@ Rules for template authors, enforced by a generator test that scaffolds a hyphen
 - `Emberly` appears only in user-visible text.
 - The sentinel never appears inside another word, and no other word in the template contains it.
 
-The project name must match `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`.
+The project name must match `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`. The title may not contain quotes, backslashes, `<`, `>`, `&` or control characters (it lands in JSON, TOML, HTML and Rust strings); the identifier must be dotted reverse-DNS (`[A-Za-z0-9-]` segments). The replacement is a single pass, so replacement text is never rescanned for the sentinel.
 
 ## The generated app
 
@@ -131,9 +134,9 @@ tinderbox <name> [--title TEXT] [--identifier REVERSE.DNS] [--dest DIR] [--no-se
 ```
 
 1. Validate the name; refuse a non-empty destination (default `./<name>`).
-2. Check prerequisites and print the install command for each one missing: `rustup`, `pnpm`, `node`, `lefthook`, `cog`, `typos`, `gitleaks`, `cargo-nextest`, `cargo-llvm-cov`, `cargo-deny`, `cargo-machete`, `cargo-sort`, `cargo-mutants`. Missing tools are a warning with `--no-setup` and an error otherwise.
+2. Check prerequisites and print the install command for each one missing: `rustup`, `pnpm`, `node`, `lefthook`, `cog`, `typos`, `gitleaks`, `cargo-nextest`, `cargo-llvm-cov`, `cargo-deny`, `cargo-machete`, `cargo-sort`, `cargo-mutants`. Missing tools are a warning with `--no-setup` and an error (before anything is written) otherwise.
 3. Copy the template, renaming the sentinel in contents and paths. Binary files are copied unchanged.
-4. Unless `--no-setup`: `git init -b main`, `pnpm install --frozen-lockfile`, `lefthook install`, then an initial commit `chore: scaffold from tinderbox <version>` that runs the pre-commit gate, so a scaffold is proven green on the user's machine before they start.
+4. Unless `--no-setup`: `git init -b main`, `pnpm install --frozen-lockfile` (run in `apps/desktop`, where the frontend lives), `lefthook install`, `git add -A`, then an initial commit `chore: scaffold from tinderbox <version>` that runs the pre-commit gate (never `--no-verify`), so a scaffold is proven green on the user's machine before they start. Each step's failure stops setup with that command's output and a non-zero exit; the files stay on disk.
 5. Print next steps.
 
 The generator is Python 3.13+ with no runtime dependencies (the standard library only), so `uvx` installs it in seconds.

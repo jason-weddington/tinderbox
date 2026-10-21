@@ -1,0 +1,6 @@
+# Project vocabulary for the `typos` spell checker.
+[default]
+extend-ignore-re = ["`[0-9a-f]{7,40}`"]
+
+[files]
+extend-exclude = ["CHANGELOG.md", "*.lock", "tests/fixtures/template/assets/*"]

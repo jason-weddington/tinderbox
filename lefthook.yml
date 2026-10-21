@@ -1,0 +1,44 @@
+# Git hook orchestration. Hooks CHECK, they never FIX: when `ruff format
+# --check` fails, run `uv run ruff format` yourself and re-commit.
+# Activate on a fresh clone with:  lefthook install
+output:
+  - failure
+
+commit-msg:
+  commands:
+    conventional:
+      run: cog verify --file {1}
+
+pre-commit:
+  parallel: true
+  commands:
+    ruff-check:
+      run: uv run ruff check
+    ruff-format:
+      run: uv run ruff format --check
+    mypy:
+      run: uv run mypy --strict
+    # pyproject's pytest addopts enforce the coverage floor (--cov-fail-under).
+    # RATCHET it up as coverage climbs, never down.
+    pytest:
+      run: uv run pytest -q
+    typos:
+      run: typos
+    gitleaks:
+      run: gitleaks git --staged --redact
+    shell-syntax:
+      glob: "*.sh"
+      run: bash -n {staged_files}
+
+pre-push:
+  commands:
+    # A maintainer may link a private leak scanner as release.guard.local.sh
+    # (gitignored). When present it gates the push; when absent the step
+    # prints a notice and passes, so contributors and CI are unaffected.
+    public-guard:
+      run: |
+        if [ -x ./release.guard.local.sh ]; then
+          PUBLIC_GUARD_REMOTE=origin ./release.guard.local.sh
+        else
+          echo "public guard: release.guard.local.sh not present, skipping"
+        fi

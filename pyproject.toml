@@ -1,0 +1,92 @@
+[project]
+name = "tinderbox"
+version = "0.1.0"
+description = "Starter kit for macOS-first Rust + Tauri 2 + Svelte 5 apps with strict quality gates and agent docs"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+tinderbox = "tinderbox.cli:main"
+
+[dependency-groups]
+dev = [
+    "hatchling>=1.27",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# The template ships as package data (tinderbox/template/), copied from the
+# repo's live template/ app by hatch_build.py, which applies the same exclusion
+# rules the generator uses (hatch's own excludes do not filter force-included
+# files). Build output must never ship; tests/test_wheel.py proves it by
+# building a wheel.
+[tool.hatch.build.targets.wheel]
+packages = ["src/tinderbox"]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/template", "/tests", "/README.md", "/LICENSE"]
+exclude = [
+    ".DS_Store",
+    "*.local.*",
+    "target/",
+    "node_modules/",
+    "test-results/",
+    "playwright-report/",
+    "/template/coverage/",
+    "/template/apps/*/coverage/",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",   # conflicts with D211
+    "D213",   # conflicts with D212
+    "COM812", # conflicts with the formatter
+    "ISC001", # conflicts with the formatter
+    "CPY001", # no per-file copyright notices
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # assert is the point of a test
+    "S603",    # tests run the stub scripts they wrote
+    "S607",
+    "PLR2004", # magic numbers in expectations
+    "D",       # test names document themselves
+    "ANN401",
+    "ARG001",  # fixtures requested only for their side effect
+    "INP001",  # tests are not a package
+]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests", "hatch_build.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--cov=tinderbox --cov-report=term-missing --cov-fail-under=100 -m 'not slow'"
+markers = ["slow: scaffolds the real template and runs its full gate (set TINDERBOX_SLOW=1)"]
+
+[tool.coverage.run]
+branch = true
+source = ["tinderbox"]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:"]
