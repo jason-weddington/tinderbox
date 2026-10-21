@@ -42,8 +42,9 @@ jobs:
           node-version: lts/*
       - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2
         with:
-          tool: cargo-nextest,cargo-llvm-cov,cargo-deny,cargo-machete,cargo-sort,cargo-mutants,typos,cocogitto,gitleaks
-      - run: brew install lefthook
+          tool: cargo-nextest,cargo-llvm-cov,cargo-deny,cargo-machete,cargo-sort,cargo-mutants,typos
+      # Not in install-action's manifest list.
+      - run: brew install lefthook cocogitto gitleaks
       # The initial commit of a scaffold needs an identity.
       - run: |
           git config --global user.name "tinderbox CI"
