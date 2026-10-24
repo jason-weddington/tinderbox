@@ -98,6 +98,10 @@ expect_fail "eslint: a component imports Tauri" \
 # heavy steps.
 docs_case() {
   fresh
+  # Under a git hook (e.g. `git commit -a`) these point at the outer repo and
+  # its temporary index, so the scratch repo below would use the wrong index.
+  # After `fresh`, which reads the outer index; this is the last case.
+  unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
   (cd "$work/t" && git init -q && git add docs/design.md README.md) || { fail=1; return; }
   if ! (cd "$work/t" && scripts/docs-only.sh staged 2>/dev/null); then
     echo "selftest: docs-only.sh does not skip a docs-only change" >&2; fail=1

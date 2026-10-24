@@ -23,4 +23,8 @@ if leftovers="$(grep -rIil --exclude-dir=.git --exclude-dir=node_modules --exclu
 fi
 
 (cd "$dest" && scripts/gate.sh full)
+
+# Hooks run with GIT_INDEX_FILE pointing at the outer repo's index (as under
+# `git commit -a`); the selftest's scratch repos must not inherit it.
+(cd "$dest" && GIT_INDEX_FILE="$dest/.git/index" bash scripts/selftest-checks.sh)
 echo "template OK"
