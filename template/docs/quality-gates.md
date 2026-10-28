@@ -33,14 +33,13 @@ A change that touches only `docs/**` and top-level `*.md` skips clippy, tests, c
 | Frontend: `pnpm install --frozen-lockfile`, `svelte-check --fail-on-warnings`, `eslint --max-warnings 0`, unit tests | Type errors and warnings in templates, lint debt, a lockfile that disagrees with `package.json` | Tens of seconds |
 | Rust line coverage floor (pre-push) | Code that no test executes | A test run in the warm tree |
 | Doctests (pre-push) | Documentation examples that no longer compile; nextest does not run doctests | Seconds to a minute |
-| `cargo mutants --in-diff`, zero survivors (pre-push) | Tests that pass without checking anything on the code just changed | Minutes |
-| `cargo mutants` over the core, zero survivors (full) | The same, over everything, so nothing escapes for long | Longest step |
+| `cargo mutants` over the core, zero survivors (release only) | Tests that pass without checking anything on the logic they cover | Longest step |
 | `cargo machete`, `cargo deny check`, `pnpm audit --prod` | Unused dependencies, licences, advisories, unexpected registries, vulnerable frontend packages | Seconds |
 | Playwright e2e with axe, frontend coverage floor, `vite build` | UI regressions against the mock, accessibility violations, untested frontend code, a bundle that does not build | Minutes |
 
 ### Why these are worth their cost
 
-**Mutation testing** is the one gate whose cost deserves care. Coverage proves a line ran, not that anything asserted on it; a mutant (a flipped comparison, a deleted statement) that survives proves the tests would pass with the logic broken. Zero survivors is the only bar that does not erode: any tolerated number invites the next one. It is slow, so pre-push scopes it to the diff against the merge-base (untracked files included, so an agent's uncommitted work is covered), and only `full` runs the whole core. An unknown base falls back to a full run rather than skipping. Mutation copies of the tree go under `target/` rather than the system temp directory, so concurrent gates cannot fill a small tmpfs, and run few jobs in parallel.
+**Mutation testing** is the one gate whose cost deserves care. Coverage proves a line ran, not that anything asserted on it; a mutant (a flipped comparison, a deleted statement) that survives proves the tests would pass with the logic broken. Zero survivors is the only bar that does not erode: any tolerated number invites the next one. It is slow, and under concurrent dispatch mutants plus e2e can exhaust a host's memory, so it runs only in `gate.sh release`, which `release.sh` calls before cutting a version: features iterate on branches and merge to main without it, and the survivors are fixed in one pass before each release. Mutation copies of the tree go under `target/` rather than the system temp directory, so concurrent gates cannot fill a small tmpfs, and run few jobs in parallel.
 
 **The time-zone and locale rerun** runs the whole core suite a second time under an unusual zone (a 45-minute offset with its own DST rules) and a decimal-comma locale. Code that formats or parses dates, numbers or sorted strings works on the author's machine and fails on a user's; the rerun catches it on the author's machine. The cost is one more test run, paid only because the suite is fast.
 

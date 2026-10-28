@@ -34,7 +34,8 @@ cd apps/desktop && pnpm install --frozen-lockfile && pnpm exec playwright instal
 cd apps/desktop && pnpm tauri dev    # the app, with hot reload
 cd apps/desktop && pnpm dev          # the frontend alone in a browser, against the mock backend
 bash scripts/gate.sh pre-commit      # the checks every commit runs
-bash scripts/gate.sh full            # every check, including coverage, mutation testing and e2e
+bash scripts/gate.sh full            # every check except mutation testing, including coverage and e2e
+bash scripts/gate.sh release         # full plus mutation testing; release.sh runs it
 ```
 
 ## Install

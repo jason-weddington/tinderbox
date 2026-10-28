@@ -84,22 +84,21 @@ The template ships one small feature that exercises every seam, so an agent can 
 
 ## Quality gates
 
-`scripts/gate.sh <mode>` is the single definition. lefthook calls it (`pre-commit`, `pre-push`), and an agent harness or CI calls `gate.sh full`, so hooks and agents cannot drift. Hooks check and never fix. A docs-only change (`docs/**`, top-level `*.md`) skips the heavy steps, failing safe: any other file re-enables them.
+`scripts/gate.sh <mode>` is the single definition. lefthook calls it (`pre-commit`, `pre-push`), and an agent harness or CI calls `gate.sh full`, so hooks and agents cannot drift. `gate.sh release` is `full` plus mutation testing over the whole core; the template's `release.sh` runs it before `cog bump`, so mutants run once per release rather than on every push. Hooks check and never fix. A docs-only change (`docs/**`, top-level `*.md`) skips the heavy steps, failing safe: any other file re-enables them.
 
-| Step | pre-commit | pre-push | full |
-|---|---|---|---|
-| `cargo fmt --check` and `cargo sort --grouped --check` (both workspaces), `typos`, `gitleaks` | yes | yes | yes |
-| check-architecture, selftest-checks | yes | yes | yes |
-| `cargo clippy --all-targets --all-features --locked -D warnings` (both workspaces) | yes | yes | yes |
-| core tests: `cargo llvm-cov nextest --no-report` (one shared instrumented build) | yes | yes | yes |
-| core tests again under `TZ=Pacific/Chatham LANG=de_DE.UTF-8` | yes | yes | yes |
-| frontend: `pnpm install --frozen-lockfile`, `svelte-check --fail-on-warnings`, `eslint --max-warnings 0`, unit tests | yes | yes | yes |
-| Rust line coverage floor (starts at the measured value, at least 98) | | yes | yes |
-| doctests | | yes | yes |
-| `cargo mutants --in-diff` against the merge-base, zero survivors | | yes | |
-| `cargo mutants` over the whole core, zero survivors | | | yes |
-| `cargo machete`, `cargo deny check` (both workspaces), `pnpm audit --prod` | | yes | yes |
-| Playwright e2e with axe accessibility checks, frontend coverage floor, `vite build` | | yes | yes |
+| Step | pre-commit | pre-push | full | release |
+|---|---|---|---|---|
+| `cargo fmt --check` and `cargo sort --grouped --check` (both workspaces), `typos`, `gitleaks` | yes | yes | yes | yes |
+| check-architecture, selftest-checks | yes | yes | yes | yes |
+| `cargo clippy --all-targets --all-features --locked -D warnings` (both workspaces) | yes | yes | yes | yes |
+| core tests: `cargo llvm-cov nextest --no-report` (one shared instrumented build) | yes | yes | yes | yes |
+| core tests again under `TZ=Pacific/Chatham LANG=de_DE.UTF-8` | yes | yes | yes | yes |
+| frontend: `pnpm install --frozen-lockfile`, `svelte-check --fail-on-warnings`, `eslint --max-warnings 0`, unit tests | yes | yes | yes | yes |
+| Rust line coverage floor (starts at the measured value, at least 98) | | yes | yes | yes |
+| doctests | | yes | yes | yes |
+| `cargo mutants` over the whole core, zero survivors | | | | yes |
+| `cargo machete`, `cargo deny check` (both workspaces), `pnpm audit --prod` | | yes | yes | yes |
+| Playwright e2e with axe accessibility checks, frontend coverage floor, `vite build` | | yes | yes | yes |
 
 Coverage floors only ratchet up; they are literals at the top of `gate.sh`. The frontend floor is whole-number line coverage of `src/` (unit and e2e merged, the mock excluded). `.config/nextest.toml` sets a hard timeout (`slow-timeout = { period = "30s", terminate-after = 4 }`); `.cargo/mutants.toml` names the files mutation testing examines (the whole core). `selftest-checks.sh` also proves the eslint Tauri-import ban and the docs-only skip.
 

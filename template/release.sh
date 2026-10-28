@@ -22,5 +22,9 @@ else
   echo "release: no release.guard.local.sh, skipping the local guard" >&2
 fi
 
+# The release gate: everything in `full` plus mutation testing over the whole
+# core. A surviving mutant blocks the release; add the test that kills it.
+bash scripts/gate.sh release
+
 cog bump --auto
 git push origin main --follow-tags
