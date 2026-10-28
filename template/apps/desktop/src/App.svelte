@@ -4,7 +4,7 @@
   // patterns to keep are in docs/tauri-design-notes.md.
   import { onMount } from 'svelte';
 
-  import { appInfo, errorText, onScanProgress, pickFolder, scanFolder } from './lib/bridge';
+  import { appInfo, errorText, onScanProgress, pickFolder, scanFolder, underTauri } from './lib/bridge';
   import { formatBytes, plural } from './lib/format';
   import SummaryList from './lib/SummaryList.svelte';
   import type { ScanProgress, ScanSummary } from './lib/types';
@@ -14,6 +14,10 @@
     | { kind: 'scanning'; root: string; progress: ScanProgress | null }
     | { kind: 'done'; summary: ScanSummary }
     | { kind: 'failed'; message: string };
+
+  // Tauri starts a window drag only from an element carrying data-tauri-drag-region
+  // (or a "deep" ancestor), so the attributes exist only in the Tauri build.
+  const tauri = underTauri();
 
   let view = $state<View>({ kind: 'idle' });
   let version = $state('');
@@ -45,9 +49,10 @@
   }
 </script>
 
+{#if tauri}<div class="titlebar" data-tauri-drag-region="" aria-hidden="true"></div>{/if}
 <div class="window">
-  <header class="band" data-tauri-drag-region>
-    <h1 data-tauri-drag-region>Folder summary</h1>
+  <header class="band" data-tauri-drag-region={tauri ? 'deep' : undefined}>
+    <h1>Folder summary</h1>
     <button type="button" class="primary" onclick={choose} disabled={view.kind === 'scanning'}>
       {view.kind === 'idle' ? 'Choose folder…' : 'Choose another folder…'}
     </button>
@@ -84,3 +89,17 @@
     <footer>Version {version}</footer>
   {/if}
 </div>
+
+<style>
+  /* A transparent strip across the very top, above everything, so a press at the
+     window's edge drags it whatever view is showing. Shorter than the band's
+     controls start, so it never covers one. */
+  .titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0.5rem;
+    z-index: 10;
+  }
+</style>

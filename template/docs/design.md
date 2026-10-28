@@ -94,4 +94,8 @@ Every object is exactly these fields: the Rust types refuse unknown and missing 
 
 ## UI
 
-One window with an overlay title bar: a top band (which drags the window) holds the heading and the "Choose folder…" button, inset past the traffic lights. Below it a status line (`aria-live="polite"`) and the list of extensions, which is the scrolling element. Light and dark follow the system. `tests/e2e/a11y.spec.ts` runs axe over every state in both.
+Sizes are rem on `html { font-size: 120% }`; px is for hairlines only. One window with an overlay title bar: a top band (which drags the window, via `data-tauri-drag-region="deep"` and a transparent `.titlebar` strip across the top, both rendered only in the Tauri build) holds the heading and the "Choose folder…" button, inset past the traffic lights. Below it a status line (`aria-live="polite"`) and the list of extensions, which is the scrolling element. Light and dark follow the system. `tests/e2e/a11y.spec.ts` runs axe over every state in both.
+
+### Zoom
+
+The Mac app handles Cmd+= / Cmd++ / Cmd+- / Cmd+0 in `bridge.ts` (`installZoom` / `installTauriZoom`) by calling the webview set-zoom API, which the capability `core:webview:allow-set-webview-zoom` permits. The steps are 50, 67, 75, 80, 90, 100, 110, 125, 150, 175 and 200 percent, and Cmd+0 resets to 100%. The level persists in localStorage key `emberly.zoom`; an unknown stored value falls back to 100% with a console warning. A browser build (the mock) installs nothing and leaves zoom to the browser. `tauri.conf.json`'s `zoomHotkeysEnabled` stays off because Tauri's built-in handler uses 20% steps and forgets the level on reload.
